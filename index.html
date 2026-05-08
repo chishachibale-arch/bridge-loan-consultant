@@ -18,14 +18,14 @@
     box-sizing:border-box;
 }
 
+html{
+    scroll-behavior:smooth;
+}
+
 body{
     font-family:'Inter',sans-serif;
     background:#f8fafc;
     color:#0f172a;
-}
-
-html{
-    scroll-behavior:smooth;
 }
 
 header{
@@ -103,6 +103,7 @@ header{
     text-decoration:none;
     font-weight:600;
     transition:0.3s;
+    display:inline-block;
 }
 
 .green{
@@ -169,6 +170,7 @@ header{
 .service-card p{
     color:#475569;
     line-height:1.8;
+    margin-bottom:25px;
 }
 
 .form-section{
@@ -299,6 +301,17 @@ footer{
     z-index:999;
 }
 
+.success-message{
+    display:none;
+    background:#dcfce7;
+    color:#166534;
+    padding:15px;
+    border-radius:12px;
+    margin-top:20px;
+    text-align:center;
+    font-weight:600;
+}
+
 @media(max-width:768px){
 
     header{
@@ -366,7 +379,7 @@ with confidentiality and efficiency.
 <a href="#clientForm"
 class="service-btn green"
 onclick="setService('Loan Consultancy')">
-Loan Consultancy
+Apply For Loan
 </a>
 
 <a href="#clientForm"
@@ -385,6 +398,12 @@ Admin Support
 class="service-btn light"
 onclick="setService('Investigations')">
 Investigations
+</a>
+
+<a href="https://wa.me/260976605457"
+target="_blank"
+class="service-btn green">
+WhatsApp Quick Response
 </a>
 
 </div>
@@ -408,31 +427,67 @@ Reliable support solutions for individuals and businesses.
 <div class="services-grid">
 
 <div class="service-card">
+
 <h3>Loan Consultancy</h3>
+
 <p>
-Loan guidance and lender matching.
+We match clients with verified lenders.
 </p>
+
+<a href="#clientForm"
+class="service-btn green"
+onclick="setService('Loan Consultancy')">
+Apply For Loan
+</a>
+
 </div>
 
 <div class="service-card">
+
 <h3>CRB Services</h3>
+
 <p>
-CRB reports and clearance guidance.
+Reports, clearance guidance & assessment.
 </p>
+
+<a href="#clientForm"
+class="service-btn light"
+onclick="setService('CRB Services')">
+Request CRB Assistance
+</a>
+
 </div>
 
 <div class="service-card">
-<h3>Admin Support</h3>
-<p>
-Documentation and registrations.
-</p>
-</div>
 
-<div class="service-card">
 <h3>Investigations</h3>
+
 <p>
-Background checks and verification support.
+Background checks & verification support.
 </p>
+
+<a href="#clientForm"
+class="service-btn green"
+onclick="setService('Investigations')">
+Request Investigation
+</a>
+
+</div>
+
+<div class="service-card">
+
+<h3>Admin Support</h3>
+
+<p>
+Documentation and application assistance.
+</p>
+
+<a href="#clientForm"
+class="service-btn light"
+onclick="setService('Admin Support')">
+Get Assistance
+</a>
+
 </div>
 
 </div>
@@ -460,11 +515,7 @@ Selected Service: Loan Consultancy
 <form id="leadForm">
 
 <input type="hidden"
-name="csrf_token"
-t-att-value="request.csrf_token()">
-
-<input type="hidden"
-name="name"
+name="service"
 id="selectedService"
 value="Loan Consultancy">
 
@@ -474,7 +525,7 @@ placeholder="Full Name"
 required>
 
 <input type="text"
-name="x_nrc_number"
+name="nrc_number"
 placeholder="NRC / Passport Number"
 required>
 
@@ -484,74 +535,37 @@ placeholder="Phone Number"
 required>
 
 <input type="email"
-name="email_from"
+name="email"
 placeholder="Email Address">
 
 <input type="text"
-name="street"
+name="address"
 placeholder="Residential Address">
 
 <input type="text"
-name="x_occupation"
+name="occupation"
 placeholder="Occupation / Employer">
 
-<select name="x_income_range">
+<select name="income_range">
 
 <option value="">
 Monthly Income Range
 </option>
 
-<option>
-Below K3,000
-</option>
-
-<option>
-K3,000 - K5,000
-</option>
-
-<option>
-K5,000 - K10,000
-</option>
-
-<option>
-Above K10,000
-</option>
+<option>Below K3,000</option>
+<option>K3,000 - K5,000</option>
+<option>K5,000 - K10,000</option>
+<option>Above K10,000</option>
 
 </select>
 
 <input type="text"
-name="x_next_of_kin"
+name="next_of_kin"
 placeholder="Next of Kin Full Name">
 
 <input type="tel"
-name="x_next_of_kin_phone"
+name="next_of_kin_phone"
 placeholder="Next of Kin Phone Number">
-
-<div class="full">
-
-<label>
-Upload NRC / ID Copy
-</label>
-
-<br><br>
-
-<input type="file"
-name="x_nrc_upload">
-
-</div>
-
-<div class="full">
-
-<label>
-Upload Selfie Holding NRC
-</label>
-
-<br><br>
-
-<input type="file"
-name="x_selfie_upload">
-
-</div>
 
 <textarea class="full"
 name="description"
@@ -575,6 +589,10 @@ class="submit-btn full">
 Submit Request
 
 </button>
+
+<div class="success-message full" id="successMessage">
+Request submitted successfully.
+</div>
 
 </form>
 
@@ -622,49 +640,69 @@ document.getElementById('serviceDisplay').innerHTML =
 }
 
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+
 const supabaseUrl = "YOUR_SUPABASE_URL";
 const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
 
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 document.getElementById("leadForm").addEventListener("submit", async function(e){
-    e.preventDefault();
-    e.stopPropagation();
 
-    const formData = new FormData(this);
+e.preventDefault();
 
-    const data = {
-        name: formData.get("name"),
-        contact_name: formData.get("contact_name"),
-        x_nrc_number: formData.get("x_nrc_number"),
-        phone: formData.get("phone"),
-        email_from: formData.get("email_from"),
-        street: formData.get("street"),
-        x_occupation: formData.get("x_occupation"),
-        x_income_range: formData.get("x_income_range"),
-        x_next_of_kin: formData.get("x_next_of_kin"),
-        x_next_of_kin_phone: formData.get("x_next_of_kin_phone"),
-        description: formData.get("description")
-    };
+const formData = new FormData(this);
 
-    const { error } = await supabase
-        .from("leads")
-        .insert([data]);
+const data = {
 
-    if(error){
-        alert("Failed: " + error.message);
-        console.log(error);
-    } else {
-        alert("Success: Lead submitted!");
+service: formData.get("service"),
+contact_name: formData.get("contact_name"),
+nrc_number: formData.get("nrc_number"),
+phone: formData.get("phone"),
+email: formData.get("email"),
+address: formData.get("address"),
+occupation: formData.get("occupation"),
+income_range: formData.get("income_range"),
+next_of_kin: formData.get("next_of_kin"),
+next_of_kin_phone: formData.get("next_of_kin_phone"),
+description: formData.get("description")
+
+};
+
+const { error } = await supabaseClient
+.from("leads")
+.insert([data]);
+
+if(error){
+
+alert("Submission failed: " + error.message);
+console.log(error);
+
+}else{
+
+document.getElementById("successMessage").style.display = "block";
+
 this.reset();
-document.getElementById('serviceDisplay').innerHTML =
+
+document.getElementById("selectedService").value = "Loan Consultancy";
+
+document.getElementById("serviceDisplay").innerHTML =
 "Selected Service: Loan Consultancy";
-    }
+
+window.scrollTo({
+top: document.getElementById("clientForm").offsetTop - 100,
+behavior: "smooth"
 });
+
+}
+
+});
+
 </script>
+
 </body>
 
 </html>
